@@ -1,0 +1,153 @@
+/* ─── App Shell ─────────────────────────────────────────────────── */
+body.app-shell {
+    background: linear-gradient(180deg, #f7f9fc 0%, #eef2f7 100%);
+}
+
+#appRoot {
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* ─── Sidebar ───────────────────────────────────────────────────── */
+.sidebar {
+    width: 300px;
+    min-width: 300px;
+    height: 100vh;
+    overflow: hidden;          /* overall sidebar does NOT scroll   */
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+/* Explorer tree inside sidebar — this is the only scrollable part  */
+.explorer-tree {
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1 1 0;
+    min-height: 0;             /* critical: allows flex child to shrink */
+    padding-right: 2px;
+}
+
+.explorer-tree::-webkit-scrollbar {
+    width: 4px;
+}
+.explorer-tree::-webkit-scrollbar-track {
+    background: transparent;
+}
+.explorer-tree::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 2px;
+}
+
+/* ─── Main Panel ────────────────────────────────────────────────── */
+.main-panel {
+    height: 100vh;
+    overflow-y: auto;
+}
+
+/* ─── Query Editor ──────────────────────────────────────────────── */
+.query-editor {
+    min-height: 170px;
+    font-family: "Consolas", "Courier New", monospace;
+}
+
+.result-box {
+    max-height: 360px;
+    overflow: auto;
+}
+
+/* ─── Login Card ────────────────────────────────────────────────── */
+.login-card {
+    width: 100%;
+    max-width: 420px;
+}
+
+/* ─── Database Explorer Tree ────────────────────────────────────── */
+.tree-table {
+    cursor: pointer;
+    border-radius: 0.4rem;
+    padding: 0.3rem 0.5rem;
+    margin-bottom: 0.2rem;
+}
+
+.tree-table:hover {
+    background: rgba(13, 110, 253, 0.08);
+}
+
+.tree-columns {
+    margin-left: 1.2rem;
+    margin-bottom: 0.4rem;
+}
+
+/* ─── Mini action buttons (Edit / Delete inside table rows) ─────────── */
+.btn-xs {
+    padding: 0.15rem 0.4rem;
+    font-size: 0.72rem;
+    line-height: 1.3;
+    border-radius: 0.3rem;
+}
+
+/* Keep action column cells compact and vertically centered */
+#tableDataPreview td,
+#tableDataPreview th {
+    vertical-align: middle;
+    white-space: nowrap;
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Allow long text cells to be readable on hover */
+#tableDataPreview td.cell-value {
+    white-space: nowrap;
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#tableDataPreview td.cell-value:hover {
+    white-space: normal;
+    overflow: visible;
+    max-width: none;
+    word-break: break-word;
+    background: #fffbe6;
+    position: relative;
+    z-index: 1;
+}
+
+/* ─── Dark Mode ─────────────────────────────────────────────────── */
+body.dark-mode {
+    background: #10151f;
+}
+
+body.dark-mode .sidebar,
+body.dark-mode .navbar,
+body.dark-mode .card {
+    background-color: #172131;
+    color: #dce4f0;
+}
+
+body.dark-mode .table,
+body.dark-mode .table > :not(caption) > * > * {
+    color: #dce4f0;
+}
+
+body.dark-mode .explorer-tree::-webkit-scrollbar-thumb {
+    background: rgba(220, 228, 240, 0.2);
+}
+
+/* ─── Mobile sidebar (slide-in) ─────────────────────────────────── */
+@media (max-width: 991.98px) {
+    .sidebar {
+        position: fixed;
+        z-index: 1030;
+        top: 0;
+        left: 0;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+
+    .sidebar.is-collapsed {
+        transform: translateX(-100%);
+    }
+}
