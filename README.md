@@ -11,29 +11,23 @@ A Laravel package that provides a database administration UI with Blade views, a
 - A service provider at `packages/db-lite-admin/src/DbLiteAdminServiceProvider.php`
 - A package nav partial at `packages/db-lite-admin/resources/views/nav/link.blade.php`
 
-## Install from GitHub via Composer
+## Install via Composer
 
-Add the GitHub repository as a VCS repository in your host application `composer.json`:
+This package is ready for Packagist-style installation once the repository is registered there.
 
-```json
-{
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "https://github.com/Faheem557/db-lite-admin"
-    }
-  ],
-  "require": {
-    "db-lite-admin/db-lite-admin": "dev-main"
-  }
-}
-```
-
-Then install:
+After Packagist registration, install it with:
 
 ```bash
-composer update db-lite-admin/db-lite-admin
+composer require faheem557/db-lite-admin:dev-main
 ```
+
+If you publish a tagged release like `v1.0.0`, you can install it with:
+
+```bash
+composer require faheem557/db-lite-admin:^1.0
+```
+
+If the package is not yet on Packagist, you must register the GitHub repository on Packagist first.
 
 ## Use in Blade or Livewire
 

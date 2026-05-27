@@ -1,8 +1,10 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "db-lite-admin/db-lite-admin",
+    "name": "faheem557/db-lite-admin",
     "type": "library",
     "description": "A Laravel package providing a database admin UI with Blade views and navigation support.",
+    "homepage": "https://github.com/Faheem557/db-lite-admin",
+    "repository": "https://github.com/Faheem557/db-lite-admin",
     "license": "MIT",
     "require": {
         "php": "^8.3",
