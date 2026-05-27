@@ -1,0 +1,25 @@
+{
+  "name": "db-lite-admin/db-lite-admin",
+  "description": "A Laravel package to provide a database admin UI with Blade/Livewire integration.",
+  "type": "library",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "DbLiteAdmin\\": "src/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "DbLiteAdmin\\DbLiteAdminServiceProvider"
+      ]
+    }
+  },
+  "require": {
+    "php": "^8.3",
+    "illuminate/support": "^13.0",
+    "illuminate/database": "^13.0",
+    "illuminate/routing": "^13.0",
+    "illuminate/view": "^13.0"
+  }
+}
