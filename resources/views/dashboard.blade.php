@@ -184,11 +184,14 @@
                                             <th>Name</th>
                                             <th>Type</th>
                                             <th>Nullable</th>
-                                            <th></th>
+                                            <th>Key</th>
+                                            <th>Default</th>
+                                            <th>Extra</th>
+                                            <th class="text-end">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody id="columnsBody">
-                                        <tr><td colspan="4" class="text-center py-3 text-secondary">Select a table from the Explorer.</td></tr>
+                                        <tr><td colspan="7" class="text-center py-3 text-secondary">Select a table from the Explorer.</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -360,6 +363,85 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-success">Create Table</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- ======================== EDIT COLUMN MODAL ======================== --}}
+<div class="modal fade" id="editColumnModal" tabindex="-1" aria-labelledby="editColumnModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form id="editColumnForm">
+                <input type="hidden" name="_original_column" id="editColOriginalName">
+                <div class="modal-header bg-warning-subtle">
+                    <h5 class="modal-title" id="editColumnModalLabel">
+                        <i class="bi bi-pencil-square me-2"></i>Edit Column
+                        <small class="text-muted ms-2" id="editColumnTableName"></small>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Column Name</label>
+                            <input type="text" class="form-control" name="new_name" id="editColName" required placeholder="column_name">
+                            <div class="form-text">Rename the column (leave same to keep name).</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Type</label>
+                            <select class="form-select" name="type" id="editColType" required>
+                                <option>INT</option>
+                                <option>BIGINT</option>
+                                <option>VARCHAR</option>
+                                <option>TEXT</option>
+                                <option>DATE</option>
+                                <option>DATETIME</option>
+                                <option>TIMESTAMP</option>
+                                <option>BOOLEAN</option>
+                                <option>DECIMAL</option>
+                                <option>FLOAT</option>
+                                <option>DOUBLE</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Length / Values</label>
+                            <input type="number" class="form-control" name="length" id="editColLength" placeholder="e.g. 255">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Decimals</label>
+                            <input type="number" class="form-control" name="scale" id="editColScale" placeholder="e.g. 2">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Default Value</label>
+                            <input type="text" class="form-control" name="default" id="editColDefault" placeholder="(leave blank for none)">
+                        </div>
+                        <div class="col-12">
+                            <div class="d-flex gap-4 flex-wrap">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" name="nullable" id="editColNullable" value="1">
+                                    <label for="editColNullable" class="form-check-label fw-semibold">Allow NULL</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" name="auto_increment" id="editColAutoIncrement" value="1">
+                                    <label for="editColAutoIncrement" class="form-check-label fw-semibold">Auto Increment</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Preview of generated SQL --}}
+                    <div class="mt-3">
+                        <label class="form-label small fw-semibold text-secondary">SQL Preview</label>
+                        <pre id="editColSqlPreview" class="bg-body-secondary rounded p-2 small mb-0" style="min-height: 2rem"></pre>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning" id="saveEditColumnBtn">
+                        <i class="bi bi-floppy me-1"></i>Save Changes
+                    </button>
                 </div>
             </form>
         </div>

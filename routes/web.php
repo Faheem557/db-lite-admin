@@ -35,6 +35,7 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/tables/create', [TableController::class, 'create']);
     Route::delete('/tables/{table}', [TableController::class, 'drop']);
     Route::post('/tables/{table}/columns', [TableController::class, 'addColumn']);
+    Route::put('/tables/{table}/columns/{column}', [TableController::class, 'modifyColumn']);
     Route::delete('/tables/{table}/columns/{column}', [TableController::class, 'removeColumn']);
     Route::get('/tables/{table}/export', [TableController::class, 'export']);
 

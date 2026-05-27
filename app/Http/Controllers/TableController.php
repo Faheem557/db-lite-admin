@@ -167,6 +167,46 @@ class TableController extends Controller
         ]);
     }
 
+    public function modifyColumn(Request $request, DynamicDatabaseService $dynamicDatabaseService, string $table, string $column)
+    {
+        $this->assertIdentifier($table);
+        $this->assertIdentifier($column);
+
+        $validated = $request->validate([
+            'new_name'       => ['required', 'string', 'regex:/^[A-Za-z_][A-Za-z0-9_]*$/'],
+            'type'           => ['required', 'string', Rule::in($this->allowedTypes())],
+            'length'         => ['nullable', 'integer', 'between:1,65535'],
+            'scale'          => ['nullable', 'integer', 'between:0,30'],
+            'nullable'       => ['nullable', 'boolean'],
+            'default'        => ['nullable', 'string', 'max:255'],
+            'auto_increment' => ['nullable', 'boolean'],
+        ]);
+
+        $databaseConnection = $dynamicDatabaseService->getActiveConnectionModel();
+
+        if (! $databaseConnection) {
+            return response()->json([
+                'message' => 'Please connect to a database first.',
+            ], 422);
+        }
+
+        $connection  = $dynamicDatabaseService->getConnection($databaseConnection);
+        $primaryKeys = [];
+        $definition  = $this->compileColumnDefinition($connection, array_merge($validated, ['name' => $validated['new_name']]), $primaryKeys);
+
+        $quotedTable  = $this->quoteIdentifier($table);
+        $quotedOldCol = $this->quoteIdentifier($column);
+        $quotedNewCol = $this->quoteIdentifier($validated['new_name']);
+
+        // Use CHANGE instead of MODIFY so we can also rename the column
+        $sql = "ALTER TABLE {$quotedTable} CHANGE COLUMN {$quotedOldCol} {$definition}";
+        $connection->statement($sql);
+
+        return response()->json([
+            'message' => "Column '{$column}' modified successfully.",
+        ]);
+    }
+
     public function removeColumn(Request $request, DynamicDatabaseService $dynamicDatabaseService, string $table, string $column)
     {
         $request->validate([

@@ -304,21 +304,47 @@
         const data = await api(`/columns?table=${encodeURIComponent(tableName)}`);
         if (!data.columns.length) {
             elements.columnsBody.innerHTML =
-                '<tr><td colspan="4" class="text-center py-3 text-secondary">No columns found.</td></tr>';
+                '<tr><td colspan="7" class="text-center py-3 text-secondary">No columns found.</td></tr>';
             return;
         }
 
+        // Store full column metadata for the edit modal
+        state.columnDetailsMeta = data.columns;
+
         elements.columnsBody.innerHTML = data.columns
             .map((column) => {
+                const keyBadge = column.key === 'PRI'
+                    ? '<span class="badge text-bg-primary">PRI</span>'
+                    : column.key === 'UNI'
+                        ? '<span class="badge text-bg-info">UNI</span>'
+                        : column.key === 'MUL'
+                            ? '<span class="badge text-bg-secondary">MUL</span>'
+                            : '<span class="text-secondary">—</span>';
+                const defVal = column.default !== null && column.default !== undefined
+                    ? `<code class="text-success">${escapeHtml(String(column.default))}</code>`
+                    : '<span class="text-secondary">NULL</span>';
+                const extra = column.extra ? `<span class="badge text-bg-secondary">${escapeHtml(column.extra)}</span>` : '—';
+                // Build data attrs for the edit button — use btoa to safely embed JSON
+                const colDataB64 = btoa(unescape(encodeURIComponent(JSON.stringify(column))));
                 return `
                     <tr>
-                        <td>${escapeHtml(column.name)}</td>
-                        <td>${escapeHtml(column.type)}</td>
-                        <td>${column.nullable ? "Yes" : "No"}</td>
-                        <td class="text-end">
-                            <button type="button" class="btn btn-sm btn-outline-danger remove-column-btn" data-column="${escapeHtml(
-                                column.name
-                            )}">
+                        <td class="fw-semibold">${escapeHtml(column.name)}</td>
+                        <td><code>${escapeHtml(column.type)}</code></td>
+                        <td>${column.nullable
+                            ? '<span class="badge text-bg-warning">YES</span>'
+                            : '<span class="badge text-bg-secondary">NO</span>'}</td>
+                        <td>${keyBadge}</td>
+                        <td>${defVal}</td>
+                        <td>${extra}</td>
+                        <td class="text-end text-nowrap">
+                            <button type="button" class="btn btn-sm btn-outline-warning edit-column-btn me-1"
+                                data-column-b64="${colDataB64}"
+                                title="Edit column">
+                                <i class="bi bi-pencil-fill"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger remove-column-btn"
+                                data-column="${escapeHtml(column.name)}"
+                                title="Drop column">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </td>
@@ -396,6 +422,59 @@
             loadPrimaryKey(tableName),
         ]);
         await loadTableData(tableName, 1);
+    }
+
+    /* ── Edit Column Modal ─────────────────────────────────────────────── */
+    function openEditColumnModal(columnData) {
+        const typeUpper = columnData.type ? columnData.type.toUpperCase() : '';
+        // Detect base type (strip length info, e.g. varchar(255) -> VARCHAR)
+        const baseTypes = ['BIGINT','INT','VARCHAR','TEXT','DATE','DATETIME','TIMESTAMP','BOOLEAN','DECIMAL','FLOAT','DOUBLE'];
+        let matchedType = 'VARCHAR';
+        for (const t of baseTypes) {
+            if (typeUpper.startsWith(t)) { matchedType = t; break; }
+        }
+
+        // Extract length from e.g. varchar(255) or decimal(10,2)
+        const lenMatch = columnData.type ? columnData.type.match(/(\d+)/) : null;
+        const scaleMatch = columnData.type ? columnData.type.match(/,\s*(\d+)/) : null;
+
+        document.getElementById('editColOriginalName').value = columnData.name;
+        document.getElementById('editColName').value = columnData.name;
+        document.getElementById('editColType').value = matchedType;
+        document.getElementById('editColLength').value = lenMatch ? lenMatch[1] : '';
+        document.getElementById('editColScale').value = scaleMatch ? scaleMatch[1] : '';
+        document.getElementById('editColDefault').value =
+            columnData.default !== null && columnData.default !== undefined ? columnData.default : '';
+        document.getElementById('editColNullable').checked = columnData.nullable === true;
+        document.getElementById('editColAutoIncrement').checked =
+            typeof columnData.extra === 'string' && columnData.extra.toLowerCase().includes('auto_increment');
+        document.getElementById('editColumnTableName').textContent = `— ${state.currentTable}`;
+
+        updateEditColumnSqlPreview();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('editColumnModal')).show();
+    }
+
+    function updateEditColumnSqlPreview() {
+        const table  = state.currentTable || '?';
+        const oldCol = document.getElementById('editColOriginalName').value || '?';
+        const newCol = document.getElementById('editColName').value || '?';
+        const type   = document.getElementById('editColType').value;
+        const len    = document.getElementById('editColLength').value;
+        const scale  = document.getElementById('editColScale').value;
+        const def    = document.getElementById('editColDefault').value;
+        const nullable = document.getElementById('editColNullable').checked;
+        const ai     = document.getElementById('editColAutoIncrement').checked;
+
+        let typeSql = type;
+        if (type === 'VARCHAR') typeSql = `VARCHAR(${len || 255})`;
+        else if (type === 'DECIMAL') typeSql = `DECIMAL(${len || 10},${scale || 2})`;
+        else if (['INT','BIGINT','FLOAT','DOUBLE'].includes(type) && len) typeSql = `${type}(${len})`;
+
+        const nullSql = ai ? 'NOT NULL AUTO_INCREMENT' : (nullable ? 'NULL' : 'NOT NULL');
+        const defSql  = (def !== '') ? ` DEFAULT '${def}'` : '';
+
+        const previewEl = document.getElementById('editColSqlPreview');
+        previewEl.textContent = `ALTER TABLE \`${table}\` CHANGE COLUMN \`${oldCol}\` \`${newCol}\` ${typeSql} ${nullSql}${defSql};`;
     }
 
     function openEditRowModal(rowData) {
@@ -685,9 +764,10 @@
         setSelectedTable(null);
         state.primaryKey = null;
         state.columnMeta = [];
+        state.columnDetailsMeta = [];
         state.editRowData = null;
         elements.columnsBody.innerHTML =
-            '<tr><td colspan="4" class="text-center py-3 text-secondary">Select a table.</td></tr>';
+            '<tr><td colspan="7" class="text-center py-3 text-secondary">Select a table.</td></tr>';
         elements.tableDataPreview.innerHTML =
             '<thead><tr><th>Preview</th></tr></thead><tbody><tr><td class="text-center py-3 text-secondary">No table selected.</td></tr></tbody>';
         elements.paginationInfo.textContent = "Page 1";
@@ -905,6 +985,19 @@
         });
 
         elements.columnsBody.addEventListener("click", async (event) => {
+            // Edit column button
+            const editColBtn = event.target.closest('.edit-column-btn');
+            if (editColBtn && state.currentTable) {
+                try {
+                    const b64 = editColBtn.getAttribute('data-column-b64');
+                    const colData = JSON.parse(decodeURIComponent(escape(atob(b64))));
+                    openEditColumnModal(colData);
+                } catch (e) {
+                    showAlert('Could not parse column data.', 'danger');
+                }
+                return;
+            }
+
             const removeBtn = event.target.closest(".remove-column-btn");
             if (!removeBtn || !state.currentTable) {
                 return;
@@ -936,6 +1029,54 @@
                 showAlert(error.message, "danger");
             }
         });
+
+        // ─── Edit Column Form (live SQL preview + submit) ────────────────────────
+        const editColumnForm = document.getElementById('editColumnForm');
+        if (editColumnForm) {
+            // Live SQL preview on any input change
+            editColumnForm.addEventListener('input', updateEditColumnSqlPreview);
+            editColumnForm.addEventListener('change', updateEditColumnSqlPreview);
+
+            editColumnForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                if (!state.currentTable) return;
+
+                const originalCol = document.getElementById('editColOriginalName').value;
+                const payload = {
+                    new_name: document.getElementById('editColName').value.trim(),
+                    type: document.getElementById('editColType').value,
+                    length: document.getElementById('editColLength').value
+                        ? Number(document.getElementById('editColLength').value) : null,
+                    scale: document.getElementById('editColScale').value
+                        ? Number(document.getElementById('editColScale').value) : null,
+                    default: document.getElementById('editColDefault').value || null,
+                    nullable: document.getElementById('editColNullable').checked,
+                    auto_increment: document.getElementById('editColAutoIncrement').checked,
+                };
+
+                const saveBtn = document.getElementById('saveEditColumnBtn');
+                const orig = saveBtn.innerHTML;
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving…';
+
+                try {
+                    await api(
+                        `/tables/${encodeURIComponent(state.currentTable)}/columns/${encodeURIComponent(originalCol)}`,
+                        { method: 'PUT', body: payload }
+                    );
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById('editColumnModal')).hide();
+                    showAlert(`Column '${originalCol}' updated successfully.`, 'success');
+                    await loadColumns(state.currentTable);
+                    await loadTableData(state.currentTable, state.currentPage);
+                    await loadTables();
+                } catch (error) {
+                    showAlert(error.message, 'danger');
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = orig;
+                }
+            });
+        }
 
         elements.exportCsvBtn.addEventListener("click", () => {
             if (!state.currentTable) {
